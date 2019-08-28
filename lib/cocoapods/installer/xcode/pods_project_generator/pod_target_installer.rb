@@ -928,6 +928,9 @@ module Pod
                     'Project'
                   end
 
+            compile_build_phase_index = native_target.build_phases.index do |bp|
+              bp.is_a?(Xcodeproj::Project::Object::PBXSourcesBuildPhase)
+            end
             if target.build_as_framework? && any_header_mapping_dirs? && acl != 'Project'
               relative_path = if mapping_dir = header_mappings_dir(file_accessor)
                                 file_ref.real_path.relative_path_from(mapping_dir)
@@ -938,6 +941,7 @@ module Pod
               copy_phase_name = "Copy #{sub_dir} #{acl} Headers"
               copy_phase = native_target.copy_files_build_phases.find { |bp| bp.name == copy_phase_name } ||
                 native_target.new_copy_files_build_phase(copy_phase_name)
+              native_target.build_phases.move(copy_phase, compile_build_phase_index - 1) unless compile_build_phase_index.nil?
               copy_phase.symbol_dst_subfolder_spec = :products_directory
               copy_phase.dst_path = "$(#{acl.upcase}_HEADERS_FOLDER_PATH)/#{sub_dir}"
               copy_phase.add_file_reference(file_ref, true)
